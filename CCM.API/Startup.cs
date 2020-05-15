@@ -129,6 +129,9 @@ namespace CCM.API
             services.AddScoped<IBaseRepository<TheatreSession>, BaseRepository<TheatreSession>>((provider) =>
             new BaseRepository<TheatreSession>(provider.GetService<CCBDBContext>().Set<TheatreSession>()));
 
+            services.AddScoped<IBaseRepository<TicketSale>, BaseRepository<TicketSale>>((provider) =>
+            new BaseRepository<TicketSale>(provider.GetService<CCBDBContext>().Set<TicketSale>()));
+
             services.AddScoped<IBaseRepository<Ticket>, BaseRepository<Ticket>>((provider) =>
             new BaseRepository<Ticket>(provider.GetService<CCBDBContext>().Set<Ticket>()));
 

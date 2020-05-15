@@ -33,7 +33,7 @@ namespace CCM.Service.Mapping
               .ReverseMap()
               ;
 
-            CreateMap<Ticket, TicketViewModel>()
+            CreateMap<TicketSale, TicketViewModel>()
              .ReverseMap()
              ;
         }

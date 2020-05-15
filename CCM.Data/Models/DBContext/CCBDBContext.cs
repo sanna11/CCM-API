@@ -69,6 +69,7 @@ namespace CCM.Data.Models.DBContext
         public virtual DbSet<ContactPerson> ContactPersons { get; set; }
         public virtual DbSet<TheatreHall> TheatreHalls { get; set; }
         public virtual DbSet<TheatreSession> TheatreSessions { get; set; }
+        public virtual DbSet<TicketSale> TicketSales { get; set; }
         public virtual DbSet<Ticket> Tickets { get; set; }
     }
 }

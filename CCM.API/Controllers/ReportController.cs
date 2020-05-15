@@ -35,5 +35,29 @@ namespace CCM.API.Controllers
         {
             return Ok(await Service.ConcessionSalesReport(model).ConfigureAwait(true));
         }
+
+        [HttpGet("occupany-season")]
+        public async Task<ActionResult<ConcessionSalesViewModel>> OccupancyBySeason([FromQuery] BoxOfficeRequestViewModel model)
+        {
+            return Ok(await Service.OccupancyPercentage(model).ConfigureAwait(true));
+        }
+
+        [HttpGet("daily-collection")]
+        public async Task<ActionResult<DailyCollectionReportModel>> DailyCollection([FromQuery] DailyCollectionRequestViewModel model)
+        {
+            return Ok(await Service.DailyCollectionReport(model).ConfigureAwait(true));
+        }
+
+        [HttpGet("ticket-sales")]
+        public async Task<ActionResult<DailyCollectionReportModel>> TicketSales([FromQuery] TicketSalesTodayRequestModel model)
+        {
+            return Ok(await Service.TicketSales(model).ConfigureAwait(true));
+        }
+
+        [HttpGet("ticket-sales-range")]
+        public async Task<ActionResult<DailyCollectionReportModel>> TicketSalesRange([FromQuery] TicketSalesRangeModel model)
+        {
+            return Ok(await Service.TicketSalesRange(model).ConfigureAwait(true));
+        }
     }
 }

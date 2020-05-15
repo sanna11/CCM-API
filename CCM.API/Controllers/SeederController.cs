@@ -16,11 +16,15 @@ namespace CCM.API.Controllers
 
         private ITheatreSessionService SessionService { get; set; }
 
-        public SeederController(ITheatreService service, IMovieService movieService, ITheatreSessionService sessionService)
+        private ITicketService TicketService { get; set; }
+
+        public SeederController(ITheatreService service, IMovieService movieService, ITheatreSessionService sessionService,
+            ITicketService ticketService)
         {
             TheatreService = service;
             this.MovieService = movieService;
             this.SessionService = sessionService;
+            this.TicketService = ticketService;
         }
 
         [HttpGet("theatres")]
@@ -35,6 +39,10 @@ namespace CCM.API.Controllers
         [HttpGet("session")]
         public async Task<ActionResult<bool>> SeedSessions() =>
            Ok(await SessionService.SeedDataAsync().ConfigureAwait(true));
+
+        [HttpGet("tickets")]
+        public async Task<ActionResult<bool>> SeedTickets() =>
+           Ok(await TicketService.SeedDataAsync().ConfigureAwait(true));
 
     }
 }
