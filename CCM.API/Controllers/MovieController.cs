@@ -16,5 +16,11 @@ namespace CCM.API.Controllers
         {
 
         }
+
+        [HttpGet("by-theatre")]
+        public async Task<ActionResult<ConcessionSalesViewModel>> OccupancyBySeason([FromQuery] MovieRequestViewModel model)
+        {
+            return Ok(await ((IMovieService) Service).GetMoviesByTheatre(model).ConfigureAwait(true));
+        }
     }
 }

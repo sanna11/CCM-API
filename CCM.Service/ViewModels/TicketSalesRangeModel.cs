@@ -11,7 +11,6 @@ namespace CCM.Service.ViewModels
         public DateTime StartDate { get; set; }
         [Required]
         public DateTime EndDate { get; set; }
-        [Required]
         public int TheatreId { get; set; }
     }
 }

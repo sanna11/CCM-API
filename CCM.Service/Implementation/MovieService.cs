@@ -9,18 +9,30 @@ using CCM.Service.Interface;
 using AutoMapper;
 using System.Threading.Tasks;
 using CCM.Core.Enum;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace CCM.Service.Implementation
 {
     public class MovieService : BaseService<MovieViewModel, Movie>, IMovieService
     {
         private IBaseRepository<Movie> MovieRepo { get; set; }
+        private IBaseRepository<TheatreSession> TheatreSessionRepo { get; set; }
 
-        public MovieService(IBaseRepository<Movie> repo,
+        public MovieService(IBaseRepository<Movie> repo, IBaseRepository<TheatreSession> theatreSessionRepo,
             IMapper mapper, IUnitOfWork uow)
             : base(mapper, uow, repo)
         {
             this.MovieRepo = repo;
+            this.TheatreSessionRepo = theatreSessionRepo;
+        }
+
+        public async Task<IEnumerable<MovieViewModel>> GetMoviesByTheatre(MovieRequestViewModel requestModel)
+        {
+            return Mapper.Map<IEnumerable<MovieViewModel>>(await (await TheatreSessionRepo.ListByConditionAsync(x => (requestModel.TheatreId == 0 ||
+            x.TheatreId == requestModel.TheatreId) && (requestModel.Date == null  || x.Date == requestModel.Date)))
+                .Include(x => x.MovieInfo)
+                .Select(x => x.MovieInfo).ToListAsync());
         }
 
 

@@ -9,5 +9,6 @@ namespace CCM.Service.Interface
     public interface IMovieService : IBaseService<MovieViewModel>
     {
         Task<bool> SeedDataAsync();
+        Task<IEnumerable<MovieViewModel>> GetMoviesByTheatre(MovieRequestViewModel requestModel);
     }
 }

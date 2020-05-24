@@ -1,5 +1,7 @@
-﻿using System;
+﻿using CCM.Core.Handlers;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace CCM.Service.ViewModels
@@ -12,7 +14,7 @@ namespace CCM.Service.ViewModels
         public String StartTime { get; set; }
         public DateTime Date { get; set; }
         public String Day { get { return Date.ToString("ddd"); } }
-        public double Percentage { get {  return ( UsedTickets * 100.0) / TotalTickets; } }
+        public String Percentage { get {  return (( UsedTickets * 100.0) / TotalTickets).GetDecimalPoint(); } }
     }
 
     public class OccupancyPerMovie

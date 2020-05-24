@@ -56,7 +56,9 @@ namespace CCM.Service.Implementation
                     MovieName = $@"{x.First().MovieInfo.Name} ({LanguageConstants.GetString(x.First().MovieInfo.Language)}) {((x.First().MovieInfo.IsThreeD) ? "3D" : "2D")}",
                     ComplimentTickets = x.Sum(g=> g.ComplimentTickets.GetValueOrDefault()),
                     BoxOffice = x.Sum(g => g.Income.GetValueOrDefault()),
-                    TotalBookedTicket = x.Sum(g => g.TotalBookedTicket.GetValueOrDefault())
+                    TotalBookedTicket = x.Sum(g => g.TotalBookedTicket.GetValueOrDefault()),
+                    StartDate = requestModel.StartDate,
+                    EndDate = requestModel.EndDate
                 }).ToList();
 
             return new TheatreSalesViewModel()
@@ -93,7 +95,9 @@ namespace CCM.Service.Implementation
                     ConcessionCost = x.Sum(g => g.ConcessCost),
                     ConcessionTransactions = x.Sum(g => g.ConcessTrans),
                     BoxOffice = x.Sum(g => g.Income.GetValueOrDefault()),
-                    Admits = x.Sum(g => g.UsedTicket.GetValueOrDefault()) + x.Sum(g => g.ComplimentTickets.GetValueOrDefault())
+                    Admits = x.Sum(g => g.UsedTicket.GetValueOrDefault()) + x.Sum(g => g.ComplimentTickets.GetValueOrDefault()),
+                    StartDate = requestModel.StartDate,
+                    EndDate = requestModel.EndDate
                 }).ToList();
 
             return new ConcessionSalesViewModel()
@@ -115,7 +119,7 @@ namespace CCM.Service.Implementation
 
             List<TheatreSession> sessions = await (await Repo.ListByConditionAsync(x => x.Date >= requestModel.StartDate.Date && x.Date
            <= requestModel.EndDate.Date).ConfigureAwait(true))
-                .Include(x => x.MovieInfo).Include(x=> x.TheatreInfo).Include(x=> x.TheatreHallInfo).ToListAsync().ConfigureAwait(true);
+                .Include(x => x.MovieInfo).Include(x=> x.TheatreInfo).Where(x=> x.TheatreId == requestModel.TheatreId || requestModel.TheatreId == 0).Include(x=> x.TheatreHallInfo).ToListAsync().ConfigureAwait(true);
 
             List<OccupancyPerMovie> occupancy = sessions
                 .GroupBy(x => x.MovieId)
@@ -202,14 +206,26 @@ namespace CCM.Service.Implementation
                 };
             }
 
-            List<Ticket> results = await (await TicketRepo.GetAllAsync().ConfigureAwait(true))
-              .Include(x => x.TicketSaleInfo).ThenInclude(x => x.TheatreSessionInfo)
-             .ThenInclude(x => x.MovieInfo).Include(x => x.TicketSaleInfo.TheatreSessionInfo.TheatreInfo)
-             .Include(x => x.TicketSaleInfo.TheatreSessionInfo.TheatreHallInfo)
-             .Where(x => x.TicketSaleInfo.TheatreSessionInfo.Date == requestModel.Date.Date 
-             && (requestModel.TheatreId < 1 || x.TicketSaleInfo.TheatreSessionInfo.TheatreId == requestModel.TheatreId)).ToListAsync().ConfigureAwait(true);
+            List<TheatreSession> results = await (await Repo.GetAllAsync().ConfigureAwait(true))
+             .Include(x => x.MovieInfo).Include(x => x.TheatreInfo).Include(x => x.TheatreHallInfo)
+             .Where(x => x.Date == requestModel.Date.Date 
+             && (requestModel.TheatreId < 1 || x.TheatreId == requestModel.TheatreId)).ToListAsync().ConfigureAwait(true);
 
-            return await GetFormattedResults(results).ConfigureAwait(true);
+            List<TicketSalesModel> sales = results
+                .GroupBy(x => new { x.TheatreId, x.MovieId })
+               .Select(x => new TicketSalesModel()
+               {
+                   MovieName = $@"{x.First().MovieInfo.Name} ({LanguageConstants.GetString(x.First().MovieInfo.Language)}) {((x.First().MovieInfo.IsThreeD) ? "3D" : "2D")}",
+                   Theatre = $"{x.First().TheatreInfo?.Name} {x.First().TheatreHallInfo?.Name}",
+                   TotalSales = x.Sum(g => g.Income.GetValueOrDefault()),
+                   Date = requestModel.Date
+               }).ToList();
+
+            return new TicketSalesResponseModel()
+            {
+                IsSuccess = true,
+                Results = sales
+            };
         }
 
         public async Task<TicketSalesResponseModel> TicketSalesRange(TicketSalesRangeModel requestModel)
@@ -222,15 +238,44 @@ namespace CCM.Service.Implementation
                 };
             }
 
-            List<Ticket> results = await (await TicketRepo.GetAllAsync().ConfigureAwait(true))
-              .Include(x => x.TicketSaleInfo).ThenInclude(x => x.TheatreSessionInfo)
-             .ThenInclude(x => x.MovieInfo).Include(x => x.TicketSaleInfo.TheatreSessionInfo.TheatreInfo)
-             .Include(x => x.TicketSaleInfo.TheatreSessionInfo.TheatreHallInfo)
-             .Where(x => x.TicketSaleInfo.TheatreSessionInfo.Date >= requestModel.StartDate.Date && x.TicketSaleInfo.TheatreSessionInfo.Date
-           <= requestModel.EndDate.Date
-             && x.TicketSaleInfo.TheatreSessionInfo.TheatreId == requestModel.TheatreId).ToListAsync().ConfigureAwait(true);
+            List<TheatreSession> results = await (await Repo.GetAllAsync().ConfigureAwait(true))              
+             .Include(x => x.MovieInfo).Include(x => x.TheatreInfo).Include(x => x.TheatreHallInfo)
+             .Where(x => x.Date >= requestModel.StartDate.Date && x.Date <= requestModel.EndDate.Date
+             && (requestModel.TheatreId == 0 || x.TheatreId == requestModel.TheatreId)).ToListAsync().ConfigureAwait(true);
 
-            return await GetFormattedResults(results).ConfigureAwait(true);
+            List<TicketSalesModel> sales = new List<TicketSalesModel>();
+
+            if(requestModel.TheatreId == 0)
+            {
+                sales = results
+               .GroupBy(x => x.MovieId)
+               .Select(x => new TicketSalesModel()
+               {
+                   MovieName = $@"{x.First().MovieInfo.Name} ({LanguageConstants.GetString(x.First().MovieInfo.Language)}) {((x.First().MovieInfo.IsThreeD) ? "3D" : "2D")}",
+                   Theatre = $"",
+                   TotalSales = x.Sum(g => g.Income.GetValueOrDefault()),
+                   StartDate = requestModel.StartDate,
+                   EndDate = requestModel.EndDate
+               }).ToList();
+            }
+            else
+            {
+                sales = results
+               .GroupBy(x => new { x.TheatreId, x.MovieId })
+               .Select(x => new TicketSalesModel()
+               {
+                   MovieName = $@"{x.First().MovieInfo.Name} ({LanguageConstants.GetString(x.First().MovieInfo.Language)}) {((x.First().MovieInfo.IsThreeD) ? "3D" : "2D")}",
+                   Theatre = $"{x.First().TheatreInfo?.Name} {x.First().TheatreHallInfo?.Name}",
+                   TotalSales = x.Sum(g => g.Income.GetValueOrDefault()),
+                   StartDate = requestModel.StartDate,
+                   EndDate = requestModel.EndDate
+               }).ToList();
+            }
+            return new TicketSalesResponseModel()
+            {
+                IsSuccess = true,
+                Results = sales
+            };
         }
 
         private async Task<TicketSalesResponseModel> GetFormattedResults(List<Ticket> results)
